@@ -80,3 +80,21 @@ plt.xlabel(' ')
 
 plt.savefig('FDA-Delivery vs. delay.png')
 plt.show()
+
+""" Carrier Company vs. Delay """
+g=sns.barplot(x='Carrier', y='Delayed', data=df, ci=None)
+
+# change labels on x axis
+N = 10
+ind = np.arange(N)
+plt.xticks(ind, ('C - AT', 'B - FR', 'D - FR', 'A - DE', 'E - ES', 'G - FR', 'H - CH', 'F - IT', 'A - LU', 'A - NL'))
+g.set_xticklabels(g.get_xticklabels(), rotation=70, ha="right", fontsize=7)
+# put values on the bars
+for i in g.patches:
+    height = i.get_height()
+    g.text(i.get_x() + i.get_width()/2, 0.001+height, round(i.get_height(),3), color="black", ha="center")
+
+plt.ylabel('Delay rate')
+plt.tight_layout()  
+plt.savefig('carrier vs. delay.png')
+plt.show()
