@@ -62,3 +62,21 @@ plt.xlabel(' ')
 
 plt.savefig('FHS-Delivery vs. delay.png')
 plt.show()
+
+""" FDA-Delivery vs. Delay """
+q99 = df["FDA-Delivery"].quantile(0.99)
+
+plt.subplot(2,1,1)
+plt.title("FDA-Delivery")
+g = sns.violinplot(y='FDA-Delivery', x='all', hue='Delayed', split=True, data=df[df['FDA-Delivery']>=q99])
+plt.yscale('log', basey=2)
+plt.ylabel('Days')
+plt.xlabel(' ')
+
+plt.subplot(2,1,2)
+g = sns.violinplot(y='FDA-Delivery', x='all', hue='Delayed', split=True, data=df[df['FDA-Delivery']<q99])
+plt.ylabel('Days')
+plt.xlabel(' ')
+
+plt.savefig('FDA-Delivery vs. delay.png')
+plt.show()
