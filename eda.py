@@ -136,8 +136,11 @@ print(PPU_values)
 # Alternative for the for loop above
 # for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:
 #     PPU_values.append(df.apply(lambda row: row['Delayed'] and row ['PPU day']).sum()
+
+PPU_labels = days[:5]            # How to make this automatic?
+PPU_values = np.trim_zeros(PPU_values)
 plt.title('PPU')
-plt.pie(PPU_values, labels=days, autopct='%1.1f%%')
+plt.pie(PPU_values, labels=PPU_labels, autopct=lambda p: '{:.1f}%'.format(round(p)) if p > 0 else '', startangle=90)
 plt.savefig('PPU day vs. delay.png')
 plt.show()
 
@@ -148,10 +151,10 @@ for day in days:
     FHS_values.append(daily_delay)   
 print(FHS_values)
 
-# rel_FHS_days = days.where(daily_delay != 0) 
-# rel_FHS_values = np.trim_zeros(FHS_values)
+FHS_labels = days[:6] 
+FHS_values = np.trim_zeros(FHS_values)
 plt.title('FHS')
-plt.pie(FHS_values, labels=days, autopct='%1.1f%%')
+plt.pie(FHS_values, labels=FHS_labels, autopct='%1.1f%%')
 plt.savefig('FHS day vs. delay.png')
 plt.show()
 
@@ -162,10 +165,10 @@ for day in days:
     FDA_values.append(daily_delay)   
 print(FDA_values)
 
-# FDA_days = np.trim_zeros(days)
-# rel_FDA_values = np.trim_zeros(FDA_values)
+FDA_labels = days
+FDA_values = np.trim_zeros(FDA_values)
 plt.title('FDA')
-plt.pie(FDA_values, labels=days, autopct='%1.1f%%')
+plt.pie(FDA_values, labels=FDA_labels, autopct='%1.1f%%')
 plt.savefig('FDA day vs. delay.png')
 plt.show()
 
