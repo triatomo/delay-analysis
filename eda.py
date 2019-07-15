@@ -124,23 +124,29 @@ plt.show()
 
 """ Days vs. delay """
 
-## PPU Days
-daily_delay1 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Monday') else False, axis=1)
-h1 = daily_delay1.sum()
-daily_delay2 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Tuesday') else False, axis=1)
-h2 = daily_delay2.sum()
-daily_delay3 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Wednesday') else False, axis=1)
-h3 = daily_delay3.sum()
-daily_delay4 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Thursday') else False, axis=1)
-h4 = daily_delay4.sum()
-daily_delay5 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Friday') else False, axis=1)
-h5 = daily_delay5.sum()
-daily_delay6 = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']=='Saturday') else False, axis=1)
-h6 = daily_delay6.sum()
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-sizes = [h1,h2, h3, h4, h5, h6]
-plt.pie(sizes, labels=labels, autopct='%1.1f%%')
+## PPU Days
+values=[] 
+for day in days:
+    daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']==day) else False, axis=1).sum()
+    values.append(daily_delay)   
+print(values)
+
+# Alternative for the for loop above
+# for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:
+#     values.append(df.apply(lambda row: row['Delayed'] and row ['PPU day']).sum()
+
+plt.pie(values, labels=days, autopct='%1.1f%%')
 plt.savefig('PPU day vs. delay.png')
 plt.show()
 
+# FHS days
+
+
+# FDA days
+
+# LogReg
+# Randon Forest
+# NN
+# kNN
