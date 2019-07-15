@@ -124,27 +124,50 @@ plt.show()
 
 """ Days vs. delay """
 
-days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 ## PPU Days
-values=[] 
+PPU_values=[] 
 for day in days:
     daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['PPU day']==day) else False, axis=1).sum()
-    values.append(daily_delay)   
-print(values)
+    PPU_values.append(daily_delay)   
+print(PPU_values)
 
 # Alternative for the for loop above
 # for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']:
-#     values.append(df.apply(lambda row: row['Delayed'] and row ['PPU day']).sum()
-
-plt.pie(values, labels=days, autopct='%1.1f%%')
+#     PPU_values.append(df.apply(lambda row: row['Delayed'] and row ['PPU day']).sum()
+plt.title('PPU')
+plt.pie(PPU_values, labels=days, autopct='%1.1f%%')
 plt.savefig('PPU day vs. delay.png')
 plt.show()
 
 # FHS days
+FHS_values=[] 
+for day in days:
+    daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['FHS Day']==day) else False, axis=1).sum()
+    FHS_values.append(daily_delay)   
+print(FHS_values)
 
+# rel_FHS_days = days.where(daily_delay != 0) 
+# rel_FHS_values = np.trim_zeros(FHS_values)
+plt.title('FHS')
+plt.pie(FHS_values, labels=days, autopct='%1.1f%%')
+plt.savefig('FHS day vs. delay.png')
+plt.show()
 
 # FDA days
+FDA_values=[] 
+for day in days:
+    daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['FDA day']==day) else False, axis=1).sum()
+    FDA_values.append(daily_delay)   
+print(FDA_values)
+
+# FDA_days = np.trim_zeros(days)
+# rel_FDA_values = np.trim_zeros(FDA_values)
+plt.title('FDA')
+plt.pie(FDA_values, labels=days, autopct='%1.1f%%')
+plt.savefig('FDA day vs. delay.png')
+plt.show()
 
 # LogReg
 # Randon Forest
