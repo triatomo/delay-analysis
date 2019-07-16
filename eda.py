@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 df['all'] = "" 
@@ -147,7 +149,7 @@ plt.show()
 # FHS days
 FHS_values=[] 
 for day in days:
-    daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['FHS Day']==day) else False, axis=1).sum()
+    daily_delay = df.apply(lambda x: True if int(x["Delayed"]==True and x['FHS day']==day) else False, axis=1).sum()
     FHS_values.append(daily_delay)   
 print(FHS_values)
 
@@ -172,6 +174,38 @@ plt.pie(FDA_values, labels=FDA_labels, autopct='%1.1f%%')
 plt.savefig('FDA day vs. delay.png')
 plt.show()
 
+"""
+Split data into training and test dataset
+"""
+
+model_vars = ['Customer Address Country', 'Carrier Company', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
+
+shipment_data_relevant = data[model_vars]
+shipment_relevant_encoded = pd.get_dummies(shipment_data_relevant)
+# # pd.get_dummies(shipment_data_relevant)
+
+x = shipment_relevant_encoded.drop(['Delayed'], axis = 1)
+y = shipment_relevant_encoded['Delayed']  
+
+# Creating training and test sets
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=0)
+
+""" 
+Fix imbalanced class problem by oversampling the data using SMOTE
+"""
+
+sm = SMOTE(random_state=12, ratio=1.0)
+sm_x_train, sm_y_train = sm.fit_sample(x_train, y_train)
+# Why making a data frame necessary?
+sm_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
+columns = x_train.columns
+
+
+print('Length of oversampled data is ', len(sm_x_train))
+print('Number of delayed shipments in oversampled data is ', len(sm_y_train[sm_y_train['Delayed']==1]))
+print('Number of on time shipments is ', len(sm_y_train[sm_y_train['Delayed']==0]))
+print('Proportion of delayed shipments is ', len(sm_y_train[sm_y_train['Delayed']==1])/len(sm_x_train))
+print('Proportion of on time shipments is', len(sm_y_train[sm_y_train['Delayed']==0])/len(sm_x_train))
 # LogReg
 # Randon Forest
 # NN
