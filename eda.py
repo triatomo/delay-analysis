@@ -1,16 +1,21 @@
-"""
-Exploratory Data Analysis
-"""
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
+from sklearn.preprocessing import StandardScaler
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', 4)
+
+"""
+Exploratory Data Analysis
+"""
+print('Number of shipments total:', df['Delayed'].count())      # 50024
+print("Number of delayed shipments:", df['Delayed'].value_counts()[True])       # 3427
+print("Number of on time shipments:", df['Delayed'].value_counts()[False])      # 46597
 
 df['all'] = "" 
 
@@ -196,20 +201,61 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random
 """ 
 Fix imbalanced class problem by oversampling the data using SMOTE
 """
-
-sm = SMOTE(random_state=12, ratio=1.0)
+# Oversampling under represented classes with SMOTE
+print('Oversampling under-represented data...')
+sm = SMOTE('not majority')
 sm_x_train, sm_y_train = sm.fit_sample(x_train, y_train)
-# Why making a data frame necessary?
-sm_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
-columns = x_train.columns
+sm_x_test, sm_y_test = sm.fit_sample(x_test, y_test)
 
+df_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
+print('Length of oversampled data is', len(sm_x_train))
+print('Number of delayed shipments in oversampled data is', len(sm_y_train[df_y_train['Delayed']==True]))
+print('Number of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False]))
+print('Proportion of delayed shipments is', len(sm_y_train[df_y_train['Delayed']==True])/len(sm_x_train))
+print('Proportion of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False])/len(sm_x_train))
 
-print('Length of oversampled data is ', len(sm_x_train))
-print('Number of delayed shipments in oversampled data is ', len(sm_y_train[sm_y_train['Delayed']==1]))
-print('Number of on time shipments is ', len(sm_y_train[sm_y_train['Delayed']==0]))
-print('Proportion of delayed shipments is ', len(sm_y_train[sm_y_train['Delayed']==1])/len(sm_x_train))
-print('Proportion of on time shipments is', len(sm_y_train[sm_y_train['Delayed']==0])/len(sm_x_train))
-# LogReg
-# Randon Forest
+# Scale data to feed Neural Network
+print('Scaling data...')
+scaler = StandardScaler().fit(sm_x_train)
+
+sm_x_train = scaler.transform(sm_x_train)
+sm_x_test = scaler.transform(sm_x_test)
+
+"""
+Building prediction models
+"""
+# Logistic regresion
+clf_lr = LogisticRegression(solver='liblinear', random_state=0)
+clf_lr.fit(sm_x_train, sm_y_train.values.ravel())
+
+# Random Forest
+
 # NN
+mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
+
+print('Training Neural Network (this could take some time)...')
+mlp.fit(sm_x_train, sm_y_train)
+y_pred = mlp.predict(sm_x_test)
+
+# Evaluating NN model and visualization
+y_pred = y_pred.astype(np.int64)
+y_pred = le.inverse_transform(y_pred)
+
+sm_y_test = sm_y_test.astype(np.int64)
+sm_y_test = le.inverse_transform(sm_y_test)
+
+cm = confusion_matrix(sm_y_test, y_pred)
+cm_norm = cm/cm.astype(np.float).sum(axis=1)
+print('Confusion matrix:')
+print(cm)
+sns.heatmap(cm_norm, center=0.5,
+            annot=True, fmt='.2f',
+            vmin=0, vmax=1, cmap='Reds',
+            xticklabels=['A','B','C','D','E'], 
+            yticklabels=['A','B','C','D','E'])
+plt.savefig('cm_norm_heatmap.png')
+print('Saving normalized confusion matrix heatmap to "cm_norm_heatmap.png"')
+
+print('Classification matrix:')
+print(classification_report(sm_y_test,y_pred))
 # kNN
