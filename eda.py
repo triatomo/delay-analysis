@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', 4)
+
 df['all'] = "" 
 
 """ PPU-FHS vs. Delay """
@@ -109,7 +112,7 @@ plt.show()
 """ Carrier Company vs. Delay """
 g=sns.barplot(x='Carrier', y='Delayed', data=df, ci=None)
 
-# change labels on x axis
+# change labels on x axis due to data protection
 N = 10
 ind = np.arange(N)
 plt.xticks(ind, ('C - AT', 'B - FR', 'D - FR', 'A - DE', 'E - ES', 'G - FR', 'H - CH', 'F - IT', 'A - LU', 'A - NL'))
@@ -178,14 +181,14 @@ plt.show()
 Split data into training and test dataset
 """
 
-model_vars = ['Customer Address Country', 'Carrier Company', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
+# Define columns relevant for the prediction
+model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
 
-shipment_data_relevant = data[model_vars]
-shipment_relevant_encoded = pd.get_dummies(shipment_data_relevant)
-# # pd.get_dummies(shipment_data_relevant)
+rel_data = df[model_vars]
+rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
 
-x = shipment_relevant_encoded.drop(['Delayed'], axis = 1)
-y = shipment_relevant_encoded['Delayed']  
+x = rel_data_encoded.drop(['Delayed'], axis = 1)       # predictor vars
+y = rel_data_encoded['Delayed']                        # target variable
 
 # Creating training and test sets
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=0)
