@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
-from sklearn.model_selection import cross_val_score,GridSearchCV
+from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearchCV
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 pd.set_option('display.max_columns', None)
@@ -236,23 +236,24 @@ logreg = LogisticRegression(random_state=random_state)
 rf = RandomForestClassifier(random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
 
-clf = [] 
+clf = []        # List of algorithms
 clf.append(logreg)
 clf.append(rf)
 clf.append(mlp)
 
 print('Training prediction models (this could take some time)...')
-y_pred = []
+y_pred = []         # List of prediction results
 for classifier in clf:
     classifier.fit(sm_x_train, sm_y_train)
     y_pred.append(classifier.predict(sm_x_test))
     accuracy_score.append(accuracy_score.(sm_y_train, y_pred))
 
-accuracy = []
+accuracy = []       # List of prediction accuracies by algorithm
 for pred in y_pred:
     accuracy.append(accuracy_score(sm_y_test, pred))
 print(accuracy)
 
+# df of prediction results above
 pred_res = pd.DataFrame({"Accuracy Score":accuracy, "Algorithm":["Logistics Regression", "Random Forest", "MLP"]})
 
 order = pred_res.sort_values('Accuracy Score')      # Order bars in ascending order
@@ -271,17 +272,31 @@ plt.show()
 """
 Show the power of the model with cross validation
 """
+kfold = StratifiedKFold(n_splits=10)
 cross_val_results = []      # Returns n-fold results of cross validation of each predictor
 for classifier in clf:
-    cross_val_results.append(cross_val_score(classifier, sm_x_train, sm_y_train, cv=3))
+    cross_val_results.append(cross_val_score(classifier, sm_x_train, sm_y_train, scoring='accuracy', cv=kfold))
 
-cross_val_means = []    # Returns the means of the n-fold cross val results
-cross_val_std = []      # Returns the standard deviation of the n-fold cross val results
+cv_means = []    # Returns the means of the n-fold cross val results
+cv_std = []      # Returns the standard deviation of the n-fold cross val results
 for cv in cross_val_results:
-    cross_val_means.append(cv.mean())
-    cross_val_std.appen(cv.std())   
+    cv_means.append(cv.mean())
+    cv_std.append(cv.std())   
 
+cv_res = pd.DataFrame({"Cross Val Means":cv_means, "Cross Val Errors":cv_std, "Algorithm":["Logistics Regression", "Random Forest", "MLP"]})
 
+order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending order
+g = sns.barplot("Cross Val Means","Algorithm",data = cv_res, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std})
+
+for i in g.patches:         # Put labels on bars
+    width = i.get_width()/i.get_width()-0.14        # Put labels -0.14 left of the end of the bar
+    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
+    
+g.set_xlabel("Mean Accuracy")
+g = g.set_title("Cross Validation Scores")
+plt.tight_layout()  
+plt.savefig('Accuracy scores after cross val.png')
+plt.show()
 
 
 
