@@ -5,6 +5,12 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
+from sklearn.model_selection import cross_val_score,GridSearchCV
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 pd.set_option('display.max_columns', None)
@@ -214,7 +220,7 @@ print('Number of on time shipments is', len(sm_y_train[df_y_train['Delayed']==Fa
 print('Proportion of delayed shipments is', len(sm_y_train[df_y_train['Delayed']==True])/len(sm_x_train))
 print('Proportion of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False])/len(sm_x_train))
 
-# Scale data to feed Neural Network
+# Scale data to feed prediction models
 print('Scaling data...')
 scaler = StandardScaler().fit(sm_x_train)
 
@@ -224,18 +230,77 @@ sm_x_test = scaler.transform(sm_x_test)
 """
 Building prediction models
 """
-# Logistic regresion
-clf_lr = LogisticRegression(solver='liblinear', random_state=0)
-clf_lr.fit(sm_x_train, sm_y_train.values.ravel())
+random_state = 1        # Fixate a random state so that the results are reproducible
 
-# Random Forest
-
-# NN
+logreg = LogisticRegression(random_state=random_state)
+rf = RandomForestClassifier(random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
 
-print('Training Neural Network (this could take some time)...')
-mlp.fit(sm_x_train, sm_y_train)
-y_pred = mlp.predict(sm_x_test)
+clf = [] 
+clf.append(logreg)
+clf.append(rf)
+clf.append(mlp)
+
+print('Training prediction models (this could take some time)...')
+fit_to_train = []       # Fit prediction models to the traing dataset and put them into a list
+for classifier in clf:
+    fit_to_train.append(classifier.fit(sm_x_train, sm_y_train))
+
+
+y_pred = []         # list of prediction results of each model
+for fit in fit_to_train:
+    y_pred.append(fit.predict(sm_x_test))
+print(y_pred)
+
+pred_score = []
+
+
+pred_res = pd.DataFrame({"Prediction Score":score, "Algorithm":["Logistics Regression", "Random Forest". "MLP"]})
+
+# Coba fit and predict satu2 trus nanti di merge
+logreg = LogisticRegression(random_state=random_state)
+logreg.fit(sm_x_train, sm_y_train)
+y_pred = logreg.predict(sm_x_test)
+
+# Merge fit and train 
+y_pred = []
+for classifier in clf:
+    classifier.fit(sm_x_train, sm_y_train)
+    y_pred.append(classifier.predict(sm_x_test))
+    accuracy_score.append(accuracy_score.(sm_y_train, y_pred))
+
+accuracy = []
+for pred in y_pred:
+    accuracy.append(accuracy_score(sm_y_test, pred))
+print(accuracy)
+
+pred_res = pd.DataFrame({"Accuracy Score":accuracy, "Algorithm":["Logistics Regression", "Random Forest", "MLP"]})
+
+g = sns.barplot("Accuracy Score","Algorithm",data = pred_res, palette="Set3",orient = "h")
+g.set_xlabel("Accuracy Score")
+g = g.set_title("Accuracy Score")
+plt.tight_layout()  
+plt.show()
+
+# mlp.fit(sm_x_train, sm_y_train)
+# y_pred = mlp.predict(sm_x_test)
+
+"""
+Show the power of the model with cross validation
+"""
+cross_val_results = []      # Returns n-fold results of cross validation of each predictor
+for classifier in clf:
+    cross_val_results.append(cross_val_score(classifier, sm_x_train, sm_y_train, cv=3))
+
+cross_val_means = []    # Returns the means of the n-fold cross val results
+cross_val_std = []      # Returns the standard deviation of the n-fold cross val results
+for cv in cross_val_results:
+    cross_val_means.append(cv.mean())
+    cross_val_std.appen(cv.std())   
+
+
+
+
 
 # Evaluating NN model and visualization
 y_pred = y_pred.astype(np.int64)
