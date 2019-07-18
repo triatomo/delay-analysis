@@ -242,27 +242,6 @@ clf.append(rf)
 clf.append(mlp)
 
 print('Training prediction models (this could take some time)...')
-fit_to_train = []       # Fit prediction models to the traing dataset and put them into a list
-for classifier in clf:
-    fit_to_train.append(classifier.fit(sm_x_train, sm_y_train))
-
-
-y_pred = []         # list of prediction results of each model
-for fit in fit_to_train:
-    y_pred.append(fit.predict(sm_x_test))
-print(y_pred)
-
-pred_score = []
-
-
-pred_res = pd.DataFrame({"Prediction Score":score, "Algorithm":["Logistics Regression", "Random Forest". "MLP"]})
-
-# Coba fit and predict satu2 trus nanti di merge
-logreg = LogisticRegression(random_state=random_state)
-logreg.fit(sm_x_train, sm_y_train)
-y_pred = logreg.predict(sm_x_test)
-
-# Merge fit and train 
 y_pred = []
 for classifier in clf:
     classifier.fit(sm_x_train, sm_y_train)
@@ -276,14 +255,18 @@ print(accuracy)
 
 pred_res = pd.DataFrame({"Accuracy Score":accuracy, "Algorithm":["Logistics Regression", "Random Forest", "MLP"]})
 
-g = sns.barplot("Accuracy Score","Algorithm",data = pred_res, palette="Set3",orient = "h")
+order = pred_res.sort_values('Accuracy Score')      # Order bars in ascending order
+g = sns.barplot("Accuracy Score","Algorithm",data = pred_res, order=order['Algorithm'], palette="Set3",orient = "h")
+
+for i in g.patches:         # Put labels on bars
+    width = i.get_width()/i.get_width()-0.14        # Put labels -0.14 left of the end of the bar
+    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
+    
 g.set_xlabel("Accuracy Score")
 g = g.set_title("Accuracy Score")
 plt.tight_layout()  
+plt.savefig('Accuracy scores before cross val.png')
 plt.show()
-
-# mlp.fit(sm_x_train, sm_y_train)
-# y_pred = mlp.predict(sm_x_test)
 
 """
 Show the power of the model with cross validation
