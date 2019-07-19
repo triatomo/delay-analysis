@@ -272,7 +272,7 @@ plt.show()
 """
 Show the power of the model with cross validation
 """
-kfold = StratifiedKFold(n_splits=10)
+kfold = StratifiedKFold(n_splits=5)
 cross_val_results = []      # Returns n-fold results of cross validation of each predictor
 for classifier in clf:
     cross_val_results.append(cross_val_score(classifier, sm_x_train, sm_y_train, scoring='accuracy', cv=kfold))
@@ -289,7 +289,7 @@ order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending ord
 g = sns.barplot("Cross Val Means","Algorithm",data = cv_res, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std})
 
 for i in g.patches:         # Put labels on bars
-    width = i.get_width()/i.get_width()-0.14        # Put labels -0.14 left of the end of the bar
+    width = i.get_width()-(i.get_width()*0.12)        # Put labels -0.14 left of the end of the bar
     g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
 g.set_xlabel("Mean Accuracy")
