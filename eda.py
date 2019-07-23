@@ -246,7 +246,7 @@ y_pred = []         # List of prediction results
 for classifier in clf:
     classifier.fit(sm_x_train, sm_y_train)
     y_pred.append(classifier.predict(sm_x_test))
-    accuracy_score.append(accuracy_score.(sm_y_train, y_pred))
+print(y_pred)
 
 accuracy = []       # List of prediction accuracies by algorithm
 for pred in y_pred:
@@ -269,6 +269,55 @@ plt.tight_layout()
 plt.savefig('Accuracy scores before cross val.png')
 plt.show()
 
+# Evaluating NN model and visualization
+
+
+for (pred, actual) in zip(y_pred, sm_y_test):
+    pred = pred.astype(np.int64)
+    pred = le.inverse_transform(pred)
+    actual = actual.astype(np.int64)
+    actual = le.inverse_transform(actual)
+print(y_pred)
+
+y_pred = y_pred.astype(np.int64)
+y_pred = le.inverse_transform(y_pred)
+
+sm_y_test = sm_y_test.astype(np.int64)
+sm_y_test = le.inverse_transform(sm_y_test)
+
+matrix =[]  
+for cm_pred in y_pred:
+    cm = confusion_matrix(sm_y_test, cm_pred)
+    matrix.append(cm)
+print(matrix)
+
+print('Confusion matrix:')
+for p in matrix:
+    df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
+                  columns = [i for i in ["True","False"]])
+    sns.heatmap(df_cm, center=0.5,
+            annot=True, fmt='.0f',
+            vmin=0, vmax=30830)
+    plt.savefig('cm_'+ str(pred_res['Algorithm'])+'.png')       # Only save one file with all algo names
+    plt.show()
+    plt.clf()
+
+
+# b = 0
+# for (p, b) in matrix: #Doesnt work
+#     df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
+#                   columns = [i for i in ["True","False"]])
+#     sns.heatmap(df_cm, center=0.5,
+#             annot=True, fmt='.0f',
+#             vmin=0, vmax=30830)
+#     plt.savefig('cm_'+ str(pred_res['Algorithm'][b])+'.png')
+#     plt.show()
+#     plt.clf()
+#     b+=1
+
+print('Classification matrix:')
+print(classification_report(sm_y_test,y_pred)) 
+
 """
 Show the power of the model with cross validation
 """
@@ -289,7 +338,7 @@ order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending ord
 g = sns.barplot("Cross Val Means","Algorithm",data = cv_res, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std})
 
 for i in g.patches:         # Put labels on bars
-    width = i.get_width()-(i.get_width()*0.12)        # Put labels -0.14 left of the end of the bar
+    width = i.get_width()-(i.get_width()*0.12)        # Put labels left of the end of the bar
     g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
 g.set_xlabel("Mean Accuracy")
@@ -299,26 +348,3 @@ plt.savefig('Accuracy scores after cross val.png')
 plt.show()
 
 
-
-# Evaluating NN model and visualization
-y_pred = y_pred.astype(np.int64)
-y_pred = le.inverse_transform(y_pred)
-
-sm_y_test = sm_y_test.astype(np.int64)
-sm_y_test = le.inverse_transform(sm_y_test)
-
-cm = confusion_matrix(sm_y_test, y_pred)
-cm_norm = cm/cm.astype(np.float).sum(axis=1)
-print('Confusion matrix:')
-print(cm)
-sns.heatmap(cm_norm, center=0.5,
-            annot=True, fmt='.2f',
-            vmin=0, vmax=1, cmap='Reds',
-            xticklabels=['A','B','C','D','E'], 
-            yticklabels=['A','B','C','D','E'])
-plt.savefig('cm_norm_heatmap.png')
-print('Saving normalized confusion matrix heatmap to "cm_norm_heatmap.png"')
-
-print('Classification matrix:')
-print(classification_report(sm_y_test,y_pred))
-# kNN
