@@ -198,6 +198,7 @@ model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA 
 rel_data = df[model_vars]
 rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
 
+# Separate predictor from target variable
 x = rel_data_encoded.drop(['Delayed'], axis = 1)       # predictor vars
 y = rel_data_encoded['Delayed']                        # target variable
 
@@ -211,7 +212,7 @@ Fix imbalanced class problem by oversampling the data using SMOTE
 print('Oversampling under-represented data...')
 sm = SMOTE('not majority')
 sm_x_train, sm_y_train = sm.fit_sample(x_train, y_train)
-sm_x_test, sm_y_test = sm.fit_sample(x_test, y_test)
+sm_x_test, sm_y_test = sm.fit_sample(x_test, y_test)    # No oversampling the test data?
 
 df_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
 print('Length of oversampled data is', len(sm_x_train))
@@ -266,11 +267,10 @@ for i in g.patches:         # Put labels on bars
 g.set_xlabel("Accuracy Score")
 g = g.set_title("Accuracy Score")
 plt.tight_layout()  
-plt.savefig('Accuracy scores before cross val.png')
+plt.savefig('Accuracy scores before cross val_sm.png')
 plt.show()
 
 # Evaluating NN model and visualization
-
 
 for (pred, actual) in zip(y_pred, sm_y_test):
     pred = pred.astype(np.int64)
