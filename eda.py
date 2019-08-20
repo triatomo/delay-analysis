@@ -156,7 +156,7 @@ print(PPU_values)
 PPU_labels = days[:5]            # How to make this automatic?
 PPU_values = np.trim_zeros(PPU_values)
 plt.title('PPU')
-plt.pie(PPU_values, labels=PPU_labels, autopct=lambda p: '{:.1f}%'.format(round(p)) if p > 0 else '', startangle=90)
+plt.pie(PPU_values, labels=PPU_labels, autopct='%1.1f%%')
 plt.savefig('PPU day vs. delay.png')
 plt.show()
 
@@ -215,9 +215,9 @@ sm_x_train, sm_y_train = sm.fit_sample(x_train, y_train)
 sm_x_test, sm_y_test = sm.fit_sample(x_test, y_test)    # No oversampling the test data?
 
 df_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
-print('Length of oversampled data is', len(sm_x_train))
-print('Number of delayed shipments in oversampled data is', len(sm_y_train[df_y_train['Delayed']==True]))
-print('Number of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False]))
+print('Length of oversampled data is', len(sm_x_train))         #62364 
+print('Number of delayed shipments in oversampled data is', len(sm_y_train[df_y_train['Delayed']==True]))       #31182
+print('Number of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False]))  #31182
 print('Proportion of delayed shipments is', len(sm_y_train[df_y_train['Delayed']==True])/len(sm_x_train))
 print('Proportion of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False])/len(sm_x_train))
 

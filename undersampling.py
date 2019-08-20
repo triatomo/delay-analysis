@@ -41,9 +41,9 @@ nm_x_train, nm_y_train = nm.fit_sample(x_train, y_train)
 nm_x_test, nm_y_test = nm.fit_sample(x_test, y_test)
 
 df_y_train = pd.DataFrame(data = nm_y_train, columns= ['Delayed'])
-print('Length of under-sampled data is', len(nm_x_train))
-print('Number of delayed shipments in oversampled data is', len(nm_y_train[df_y_train['Delayed']==True]))
-print('Number of on time shipments is', len(nm_y_train[df_y_train['Delayed']==False]))
+print('Length of under-sampled data is', len(nm_x_train))   # 4668
+print('Number of delayed shipments in oversampled data is', len(nm_y_train[df_y_train['Delayed']==True]))   # 2334
+print('Number of on time shipments is', len(nm_y_train[df_y_train['Delayed']==False]))  # 2334
 
 # Scale data to feed prediction models
 print('Scaling data...')
@@ -85,7 +85,7 @@ order = pred_res.sort_values('Accuracy Score')      # Order bars in ascending or
 g = sns.barplot("Accuracy Score","Algorithm",data = pred_res, order=order['Algorithm'], palette="Set3",orient = "h")
 
 for i in g.patches:         # Put labels on bars
-    width = i.get_width()/i.get_width()-0.14        # Put labels -0.14 left of the end of the bar
+    width = i.get_width()-0.08        # Put labels -0.14 left of the end of the bar
     g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
 g.set_xlabel("Accuracy Score")
