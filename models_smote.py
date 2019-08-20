@@ -129,60 +129,7 @@ for p in matrix:
     plt.clf()
     n += 1
 
-
-# Evaluating NN model and visualization
-
-# for (pred, actual) in zip(y_pred, sm_y_test):   # transform data back into categorical
-#     pred = pred.astype(np.int64)
-#     pred = le.inverse_transform(pred)
-#     actual = actual.astype(np.int64)
-#     actual = le.inverse_transform(actual)
-# print(y_pred)
-
-# y_pred = y_pred.astype(np.int64)
-# y_pred = le.inverse_transform(y_pred)
-
-# sm_y_test = sm_y_test.astype(np.int64)
-# sm_y_test = le.inverse_transform(sm_y_test)
-
-matrix =[]  
-for cm_pred in y_pred:
-    cm = confusion_matrix(sm_y_test, cm_pred)
-    matrix.append(cm)
-print(matrix)
-
-# c_logreg = confusion_matrix(sm_y_test, y_pred[0])
-# print(c_logreg)
-
-print('Confusion matrix:')
-for p in matrix:
-    df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
-                  columns = [i for i in ["True","False"]])
-    sns.heatmap(df_cm, center=0.5,
-            annot=True, fmt='.0f',
-            vmin=0, vmax=17000)
-    plt.savefig('cm_'+ str(pred_res['Algorithm'])+'.png')       # Only save one file with all algo names
-    plt.show()
-    plt.clf()
-
-
-# b = 0
-# for (p, b) in matrix: #Doesnt work
-#     df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
-#                   columns = [i for i in ["True","False"]])
-#     sns.heatmap(df_cm, center=0.5,
-#             annot=True, fmt='.0f',
-#             vmin=0, vmax=30830)
-#     plt.savefig('cm_'+ str(pred_res['Algorithm'][b])+'.png')
-#     plt.show()
-#     plt.clf()
-#     b+=1
-
-print('Classification matrix:')
-print(classification_report(sm_y_test,y_pred)) 
-
-"""
-Show the power of the model with cross validation
+"""Show the predictive power of the models by cross validating using stratified k fold
 """
 kfold = StratifiedKFold(n_splits=5)
 cross_val_results = []      # Returns n-fold results of cross validation of each predictor
@@ -195,7 +142,7 @@ for cv in cross_val_results:
     cv_means.append(cv.mean())
     cv_std.append(cv.std())   
 
-cv_res = pd.DataFrame({"Cross Val Means":cv_means, "Cross Val Errors":cv_std, "Algorithm":["Logistics Regression", "Random Forest", "MLP"]})
+cv_res = pd.DataFrame({"Cross Val Means":cv_means, "Cross Val Errors":cv_std, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
 
 order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending order
 g = sns.barplot("Cross Val Means","Algorithm",data = cv_res, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std})
@@ -205,7 +152,7 @@ for i in g.patches:         # Put labels on bars
     g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
 g.set_xlabel("Mean Accuracy")
-g = g.set_title("Cross Validation Scores")
+g = g.set_title("Cross Validation Score by SMOTE")
 plt.tight_layout()  
-plt.savefig('Accuracy scores after cross val.png')
+plt.savefig('Accuracy scores_kfold_sm.png')
 plt.show()
