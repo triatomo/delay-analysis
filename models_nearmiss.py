@@ -124,4 +124,31 @@ for p in matrix:
     plt.show()  
     plt.clf()
     n += 1
+
+"""Show the predictive power of the models by cross validating using stratified k fold
+"""
+kfold = StratifiedKFold(n_splits=5)
+cross_val_results_nm = []      # Returns n-fold results of cross validation of each predictor
+for classifier in clf:
+    cross_val_results.append(cross_val_score(classifier, nm_x_train, nm_y_train, scoring='accuracy', cv=kfold))
+
+cv_means_nm = []    # Returns the means of the n-fold cross val results
+cv_std_nm = []      # Returns the standard deviation of the n-fold cross val results
+for cv in cross_val_results_nm:
+    cv_means_nm.append(cv.mean())
+    cv_std_nm.append(cv.std())   
+
+cv_res_nm = pd.DataFrame({"Cross Val Means":cv_means_nm, "Cross Val Errors":cv_std_nm, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
+
+order = cv_res_nm.sort_values('Cross Val Means')      # Order bars in ascending order
+g = sns.barplot("Cross Val Means","Algorithm",data = cv_res_nm, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std_nm})
+
+for i in g.patches:         # Put labels on bars
+    width = i.get_width()-(i.get_width()*0.12)        # Put labels left of the end of the bar
+    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
+g.set_xlabel("Mean Accuracy")
+g = g.set_title("Cross Validation Score by NearMiss")
+plt.tight_layout()  
+plt.savefig('Accuracy scores_kfold_nm.png')
+plt.show() 
