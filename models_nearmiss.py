@@ -112,8 +112,8 @@ print(matrix)
 n=0    # Make the iteration index 0 again so that n doesnt keep getting higher
 print('Confusion matrix:')
 for p in matrix:
-    df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
-                  columns = [i for i in ["True","False"]])
+    df_cm = pd.DataFrame(p, index = [i for i in ["On time","Delayed"]],
+                  columns = [i for i in ["On time","Delayed"]])
     sns.heatmap(df_cm, center=0.5,
             annot=True, fmt='.0f', cmap='YlGnBu_r',
             vmin=0, vmax=17000)
@@ -130,7 +130,7 @@ for p in matrix:
 kfold = StratifiedKFold(n_splits=5)
 cross_val_results_nm = []      # Returns n-fold results of cross validation of each predictor
 for classifier in clf:
-    cross_val_results.append(cross_val_score(classifier, nm_x_train, nm_y_train, scoring='accuracy', cv=kfold))
+    cross_val_results_nm.append(cross_val_score(classifier, nm_x_train, nm_y_train, scoring='accuracy', cv=kfold))
 
 cv_means_nm = []    # Returns the means of the n-fold cross val results
 cv_std_nm = []      # Returns the standard deviation of the n-fold cross val results
@@ -150,5 +150,5 @@ for i in g.patches:         # Put labels on bars
 g.set_xlabel("Mean Accuracy")
 g = g.set_title("Cross Validation Score by NearMiss")
 plt.tight_layout()  
-plt.savefig('Accuracy scores_kfold_nm.png')
+plt.savefig('Accuracy scores_kfold_nm_run2.png')
 plt.show() 

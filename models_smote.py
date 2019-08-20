@@ -116,15 +116,15 @@ n=0     # Make the iteration index 0 again so that n doesnt keep getting higher
 save_results_to = 'C:/Users/X240/Google Drive/Masterthesis/Data Analysis/sm/'
 print('Confusion matrix:')
 for p in matrix:
-    df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
-                  columns = [i for i in ["True","False"]])
+    df_cm = pd.DataFrame(p, index = [i for i in ["On time","Delayed"]],
+                  columns = [i for i in ["On time","Delayed"]])
     sns.heatmap(df_cm, center=0.5,
             annot=True, fmt='.0f', cmap='YlGnBu_r',
             vmin=0, vmax=17000)
     plt.title(pred_res['Algorithm'][n])
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.savefig('cm_before kfold_all models' + str(n) + '.png')
+    plt.savefig('cm_before kfold_sm' + str(n) + '.png')
     plt.show()  
     plt.clf()
     n += 1
