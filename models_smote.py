@@ -8,9 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import NeighborhoodComponentsAnalysis, KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier      # NeighborhoodComponentsAnalysis cannot import
 from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
@@ -18,7 +17,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearch
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', 4)
+# pd.set_option('display.max_rows', 4)
 
 """
 Split data into training and test dataset
@@ -48,8 +47,6 @@ df_y_train = pd.DataFrame(data = sm_y_train, columns= ['Delayed'])
 print('Length of oversampled data is', len(sm_x_train))     #62364 
 print('Number of delayed shipments in oversampled data is', len(sm_y_train[df_y_train['Delayed']==True]))  #31182
 print('Number of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False]))  #31182
-print('Proportion of delayed shipments is', len(sm_y_train[df_y_train['Delayed']==True])/len(sm_x_train))
-print('Proportion of on time shipments is', len(sm_y_train[df_y_train['Delayed']==False])/len(sm_x_train))
 
 # Scale data to feed prediction models
 print('Scaling data...')
@@ -67,21 +64,18 @@ logreg = LogisticRegression(random_state=random_state)
 rf = RandomForestClassifier(random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
 cart = DecisionTreeClassifier(random_state=random_state)
-nca = NeighborhoodComponentsAnalysis(random_state=random_state)
-knn = KNeighborsClassifier(n_neighbors=3)
-nca_pipe = Pipeline([('nca', nca), ('knn', knn)])           # K nearest Neighbour
-svm = SVC(kernel='linear', random_state=random_state)
+knn = KNeighborsClassifier()
+svm = SVC(random_state=random_state)
 
 clf = []        # List of algorithms
 clf.append(logreg)
 clf.append(rf)
 clf.append(mlp)
 clf.append(cart)
-clf.append(nca_pipe)
+clf.append(knn)
 clf.append(svm)
 
 """First the the classifiers will be applied to original test dataset with 16508 instances 
-then the same classifiers will be applied to oversampled data
 """
 print('Training prediction models on original test dataset (this could take some time)...')
 y_pred = []         # List of prediction results
@@ -96,19 +90,19 @@ for pred in y_pred:
 print(accuracy)
 
 # df of prediction results above
-pred_res = pd.DataFrame({"Accuracy Score":accuracy, "Algorithm":["Logistic Regression", "Random Forest", "MLP"]})
+pred_res = pd.DataFrame({"Accuracy Score":accuracy, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
 
 order = pred_res.sort_values('Accuracy Score')      # Order bars in ascending order
 g = sns.barplot("Accuracy Score","Algorithm",data = pred_res, order=order['Algorithm'], palette="Set3",orient = "h")
 
 for i in g.patches:         # Put labels on bars
-    width = i.get_width()-0.02        # Put labels -0.14 left of the end of the bar i.get_width()/i.get_width()-0.14
+    width = i.get_width()-0.09        # Put labels -0.14 left of the end of the bar i.get_width()/i.get_width()-0.14
     g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
     
 g.set_xlabel("Accuracy Score")
 g = g.set_title("Accuracy Score by SMOTE")
 plt.tight_layout()  
-plt.savefig('Accuracy scores before cross val_sm.png')
+plt.savefig('Accuracy scores before kfold_sm_all models.png')
 plt.show()
 
 # Make confusion matrix of each predictor w/o k-fold
@@ -119,43 +113,22 @@ for cm_pred in y_pred:
 print(matrix)
 
 n=0     # Make the iteration index 0 again so that n doesnt keep getting higher
+save_results_to = 'C:/Users/X240/Google Drive/Masterthesis/Data Analysis/sm/'
 print('Confusion matrix:')
 for p in matrix:
     df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
                   columns = [i for i in ["True","False"]])
     sns.heatmap(df_cm, center=0.5,
-            annot=True, fmt='.0f',
-            vmin=0, vmax=30830)
+            annot=True, fmt='.0f', cmap='YlGnBu_r',
+            vmin=0, vmax=17000)
     plt.title(pred_res['Algorithm'][n])
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.savefig('cm_before kfold ' + str(n) + '.png')
+    plt.savefig('cm_before kfold_all models' + str(n) + '.png')
     plt.show()  
     plt.clf()
     n += 1
 
-# Make confusion matrix of each predictor w/o k-fold
-matrix =[]  
-for cm_pred in y_pred:
-    cm = confusion_matrix(sm_y_test, cm_pred)
-    matrix.append(cm)
-print(matrix)
-
-m=0     # Make the iteration index 0 again so that n doesnt keep getting higher
-print('Confusion matrix:')
-for p in matrix:
-    df_cm = pd.DataFrame(p, index = [i for i in ["True","False"]],
-                  columns = [i for i in ["True","False"]])
-    sns.heatmap(df_cm, center=0.5,
-            annot=True, fmt='.0f',
-            vmin=0, vmax=30830)
-    plt.title(pred_res['Algorithm'][m])
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
-    plt.savefig('cm_smotedtest ' + str(m) + '.png')
-    plt.show()  
-    plt.clf()
-    m += 1
 
 # Evaluating NN model and visualization
 
@@ -187,7 +160,7 @@ for p in matrix:
                   columns = [i for i in ["True","False"]])
     sns.heatmap(df_cm, center=0.5,
             annot=True, fmt='.0f',
-            vmin=0, vmax=30830)
+            vmin=0, vmax=17000)
     plt.savefig('cm_'+ str(pred_res['Algorithm'])+'.png')       # Only save one file with all algo names
     plt.show()
     plt.clf()
