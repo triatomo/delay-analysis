@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -194,9 +194,16 @@ Split data into training and test dataset
 
 # Define columns relevant for the prediction
 model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
-
 rel_data = df[model_vars]
-rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
+
+# Create the encoder
+encoder = OneHotEncoder(handle_unknown="ignore")
+rel_data_encoded = encoder.fit_transform(rel_data)    # Assume for simplicity all features are categorical.
+
+# # Apply the encoder
+# X_train = encoder.transform(X_train)
+# X_test = encoder.transform(X_test)
+# rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
 
 # Separate predictor from target variable
 x = rel_data_encoded.drop(['Delayed'], axis = 1)       # predictor vars
@@ -204,6 +211,8 @@ y = rel_data_encoded['Delayed']                        # target variable
 
 # Creating training and test sets
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=0)
+x_train = encoder.transform(x_train)
+X_test = encoder.transform(x_test)
 
 """ 
 Fix imbalanced class problem by oversampling the data using SMOTE
