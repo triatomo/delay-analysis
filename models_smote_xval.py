@@ -60,7 +60,7 @@ logreg = LogisticRegression(random_state=random_state)
 rf = RandomForestClassifier(random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
 cart = DecisionTreeClassifier(random_state=random_state)
-knn = KNeighborsClassifier(random_state=random_state)
+knn = KNeighborsClassifier()
 svm = SVC(random_state=random_state)
 
 clf = []        # List of algorithms
