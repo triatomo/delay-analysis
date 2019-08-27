@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
 from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearchCV
-from imblearn.pipeline import make_pipeline
+from imblearn.pipeline import make_pipeline, Pipeline
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
 pd.set_option('display.max_columns', None)
@@ -60,7 +60,7 @@ logreg = LogisticRegression(random_state=random_state)
 rf = RandomForestClassifier(random_state=random_state)
 mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
 cart = DecisionTreeClassifier(random_state=random_state)
-knn = KNeighborsClassifier()
+knn = KNeighborsClassifier(random_state=random_state)
 svm = SVC(random_state=random_state)
 
 clf = []        # List of algorithms
@@ -82,13 +82,13 @@ for classifier in clf:
 
 cv_means_sm = []    # Returns the means of the n-fold cross val results
 cv_std_sm = []      # Returns the standard deviation of the n-fold cross val results
-for cv in cross_val_results:
+for cv in cross_val_results_sm:
     cv_means_sm.append(cv.mean())
     cv_std_sm.append(cv.std())   
 
 cv_res_sm = pd.DataFrame({"Cross Val Means":cv_means_sm, "Cross Val Errors":cv_std_sm, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
 
-order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending order
+order = cv_res_sm.sort_values('Cross Val Means')      # Order bars in ascending order
 g = sns.barplot("Cross Val Means","Algorithm",data = cv_res_sm, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std_sm})
 
 for i in g.patches:         # Put labels on bars
@@ -100,3 +100,54 @@ g = g.set_title("Cross Validation Score by SMOTE")
 plt.tight_layout()  
 plt.savefig('Accuracy scores_kfold_sm.png')
 plt.show()
+
+"""
+Hyperparameter tuning for kNN, Random forest and CART (SMOTE)
+"""
+random_state = 1
+kfold = StratifiedKFold(n_splits=5)
+sm = SMOTE('not majority', random_state=42)
+
+# Random Forest
+rf = RandomForestClassifier(random_state=random_state)
+
+sm_classifier_rf = Pipeline([('sm', sm), ('rf', rf)])
+param_grid = {"rf__max_features": [1, 3, 10],
+              "rf__min_samples_split": [2, 3, 10],
+              "rf__min_samples_leaf": [1, 3, 10],
+              "rf__n_estimators" :[100,300]}
+
+gs_rf = GridSearchCV(sm_classifier_rf, param_grid = param_grid, cv=kfold, scoring="accuracy", verbose = 1)
+gs_rf.fit(x_scale, y)
+
+print('Best parameters found: ', gs_rf.best_params_)
+print('Best estimator found: ', gs_rf.best_estimator_)
+print('Best score found: ', gs_rf.best_score_)
+
+# KNN
+knn = KNeighborsClassifier()
+
+sm_classifier_knn = Pipeline([('sm', sm), ('knn', knn)])
+param_grid_knn = {"knn__n_neighbors": [3, 5, 11, 19],
+                  "knn__weights": ['uniform', 'distance']}
+
+gs_knn = GridSearchCV(sm_classifier_knn, param_grid=param_grid_knn, cv=kfold, scoring="accuracy", verbose = 1)
+gs_knn.fit(x_scale, y)
+
+print('Best parameters found: ', gs_knn.best_params_)
+print('Best estimator found: ', gs_knn.best_estimator_)
+print('Best score found: ', gs_knn.best_score_)
+
+# CART
+cart = DecisionTreeClassifier(random_state=random_state)
+
+sm_classifier_cart = Pipeline([('sm', sm), ('cart', cart)])
+param_grid_cart = {'cart__min_samples_split':[10,500,20],
+                   'cart__max_depth':[1,20,2]}
+
+gs_cart = GridSearchCV(sm_classifier_cart, param_grid=param_grid_cart, cv=kfold, scoring="accuracy", verbose = 1)
+gs_cart.fit(x_scale, y)
+
+print('Best parameters found: ', gs_cart.best_params_)
+print('Best estimator found: ', gs_cart.best_estimator_)
+print('Best score found: ', gs_cart.best_score_)

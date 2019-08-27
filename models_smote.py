@@ -138,13 +138,13 @@ for classifier in clf:
 
 cv_means_sm = []    # Returns the means of the n-fold cross val results
 cv_std_sm = []      # Returns the standard deviation of the n-fold cross val results
-for cv in cross_val_results:
+for cv in cross_val_results_sm:
     cv_means_sm.append(cv.mean())
     cv_std_sm.append(cv.std())   
 
 cv_res_sm = pd.DataFrame({"Cross Val Means":cv_means_sm, "Cross Val Errors":cv_std_sm, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
 
-order = cv_res.sort_values('Cross Val Means')      # Order bars in ascending order
+order = cv_res_sm.sort_values('Cross Val Means')      # Order bars in ascending order
 g = sns.barplot("Cross Val Means","Algorithm",data = cv_res_sm, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std_sm})
 
 for i in g.patches:         # Put labels on bars
