@@ -120,8 +120,10 @@ param_grid = {"rf__max_features": [1, 3, 10],
 gs_rf = GridSearchCV(sm_classifier_rf, param_grid = param_grid, cv=kfold, scoring="accuracy", verbose = 1)
 gs_rf.fit(x_scale, y)
 
+rf_best = gs_rf.best_estimator_
+
 print('Best parameters found: ', gs_rf.best_params_)
-print('Best estimator found: ', gs_rf.best_estimator_)
+print('Best estimator found: ', rf_best)
 print('Best score found: ', gs_rf.best_score_)
 
 # KNN
@@ -134,8 +136,10 @@ param_grid_knn = {"knn__n_neighbors": [3, 5, 11, 19],
 gs_knn = GridSearchCV(sm_classifier_knn, param_grid=param_grid_knn, cv=kfold, scoring="accuracy", verbose = 1)
 gs_knn.fit(x_scale, y)
 
+knn_best = gs_knn.best_estimator_
+
 print('Best parameters found: ', gs_knn.best_params_)
-print('Best estimator found: ', gs_knn.best_estimator_)
+print('Best estimator found: ', knn_best)
 print('Best score found: ', gs_knn.best_score_)
 
 # CART
@@ -145,9 +149,68 @@ sm_classifier_cart = Pipeline([('sm', sm), ('cart', cart)])
 param_grid_cart = {'cart__min_samples_split':[10,500,20],
                    'cart__max_depth':[1,20,2]}
 
-gs_cart = GridSearchCV(sm_classifier_cart, param_grid=param_grid_cart, cv=kfold, scoring="accuracy", verbose = 1)
+# Message from Ben: use n_jobs = -1 to make it run on all cores in parallel (much faster)
+gs_cart = GridSearchCV(sm_classifier_cart, param_grid=param_grid_cart, cv=kfold, scoring="accuracy", verbose = 1, n_jobs = -1)
 gs_cart.fit(x_scale, y)
 
+cart_best = gs_cart.best_estimator_
+
 print('Best parameters found: ', gs_cart.best_params_)
-print('Best estimator found: ', gs_cart.best_estimator_)
+print('Best estimator found: ', cart_best)
 print('Best score found: ', gs_cart.best_score_)
+
+""" Generate a simple plot of the test and training learning curve
+"""
+
+def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
+                        n_jobs=-1, train_sizes=np.linspace(.1, 1.0, 5)):
+    plt.figure()
+    plt.title(title)
+    if ylim is not None:
+        plt.ylim(*ylim)
+    plt.xlabel("Training examples")
+    plt.ylabel("Score")
+    train_sizes, train_scores, test_scores = learning_curve(
+        estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    plt.grid()
+
+    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                     train_scores_mean + train_scores_std, alpha=0.1,
+                     color="r")
+    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
+    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
+
+    plt.legend(loc="best")
+    return plt
+
+g = plot_learning_curve(gs_knn.best_estimator_,"kNN learning curves", x_scale, y,cv=kfold)
+g = plot_learning_curve(gs_cart.best_estimator_,"CART learning curves", x_scale, y,cv=kfold)
+g = plot_learning_curve(gs_rf.best_estimator_,"Random Forest learning curves", x_scale, y,cv=kfold)
+
+""" Feature Importance
+"""
+nrows = ncols = 2
+fig, axes = plt.subplots(nrows = nrows, ncols = ncols, sharex="all", figsize=(15,15))
+
+names_classifiers = [("KNN", knn_best),("CART",cart_best),("Random Forest",rf_best)]
+
+nclassifier = 0
+for row in range(nrows):
+    for col in range(ncols):
+        name = names_classifiers[nclassifier][0]
+        classifier = names_classifiers[nclassifier][1]
+        indices = np.argsort(classifier.feature_importances_)[::-1][:40]
+        g = sns.barplot(y=X_train.columns[indices][:40],x = classifier.feature_importances_[indices][:40] , orient='h',ax=axes[row][col])
+        g.set_xlabel("Relative importance",fontsize=12)
+        g.set_ylabel("Features",fontsize=12)
+        g.tick_params(labelsize=9)
+        g.set_title(name + " feature importance")
+        nclassifier += 1
