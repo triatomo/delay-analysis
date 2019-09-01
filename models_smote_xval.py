@@ -13,7 +13,7 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
-from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearchCV, learning_curve
 from imblearn.pipeline import make_pipeline, Pipeline
 
 df = pd.read_csv('cleaned_data.csv', dtype={'Delayed': np.bool})
@@ -24,13 +24,13 @@ pd.set_option('display.max_columns', None)
 Split data into training and test dataset
 """
 # Define columns relevant for the prediction
-model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
+model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'Delayed']
 
 rel_data = df[model_vars]
 rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
 
 # Separate predictor from target variable
-x = rel_data_encoded.drop(['Delayed'], axis = 1)       # predictor vars
+x = rel_data_encoded.drop(['Delayed'], axis = 1)       # predictor vars 55 x 50024
 y = rel_data_encoded['Delayed']                        # target variable
 
 # Scale data to feed prediction models
@@ -117,10 +117,10 @@ param_grid = {"rf__max_features": [1, 3, 10],
               "rf__min_samples_leaf": [1, 3, 10],
               "rf__n_estimators" :[100,300]}
 
-gs_rf = GridSearchCV(sm_classifier_rf, param_grid = param_grid, cv=kfold, scoring="accuracy", verbose = 1)
+gs_rf = GridSearchCV(sm_classifier_rf, param_grid = param_grid, cv=kfold, scoring="accuracy", verbose = 1, n_jobs = -1)
 gs_rf.fit(x_scale, y)
 
-rf_best = gs_rf.best_estimator_
+rf_best = gs_rf.best_estimator_.named_steps['rf']
 
 print('Best parameters found: ', gs_rf.best_params_)
 print('Best estimator found: ', rf_best)
@@ -133,10 +133,10 @@ sm_classifier_knn = Pipeline([('sm', sm), ('knn', knn)])
 param_grid_knn = {"knn__n_neighbors": [3, 5, 11, 19],
                   "knn__weights": ['uniform', 'distance']}
 
-gs_knn = GridSearchCV(sm_classifier_knn, param_grid=param_grid_knn, cv=kfold, scoring="accuracy", verbose = 1)
+gs_knn = GridSearchCV(sm_classifier_knn, param_grid=param_grid_knn, cv=kfold, scoring="accuracy", verbose = 1, n_jobs = -1)
 gs_knn.fit(x_scale, y)
 
-knn_best = gs_knn.best_estimator_
+knn_best = gs_knn.best_estimator_.named_steps['knn']
 
 print('Best parameters found: ', gs_knn.best_params_)
 print('Best estimator found: ', knn_best)
@@ -146,14 +146,15 @@ print('Best score found: ', gs_knn.best_score_)
 cart = DecisionTreeClassifier(random_state=random_state)
 
 sm_classifier_cart = Pipeline([('sm', sm), ('cart', cart)])
-param_grid_cart = {'cart__min_samples_split':[10,500,20],
-                   'cart__max_depth':[1,20,2]}
+param_grid_cart = {'cart__min_samples_split':[2,3,10],
+                   'cart__max_depth':[1,20,2],
+                   'cart__min_samples_leaf': [1,3,10]}
 
 # Message from Ben: use n_jobs = -1 to make it run on all cores in parallel (much faster)
 gs_cart = GridSearchCV(sm_classifier_cart, param_grid=param_grid_cart, cv=kfold, scoring="accuracy", verbose = 1, n_jobs = -1)
 gs_cart.fit(x_scale, y)
 
-cart_best = gs_cart.best_estimator_
+cart_best = gs_cart.best_estimator_.named_steps['cart']
 
 print('Best parameters found: ', gs_cart.best_params_)
 print('Best estimator found: ', cart_best)
@@ -161,7 +162,6 @@ print('Best score found: ', gs_cart.best_score_)
 
 """ Generate a simple plot of the test and training learning curve
 """
-
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
                         n_jobs=-1, train_sizes=np.linspace(.1, 1.0, 5)):
     plt.figure()
@@ -189,28 +189,33 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
              label="Cross-validation score")
 
     plt.legend(loc="best")
+    plt.savefig(title + '.png')
     return plt
 
+# est_knn = Pipeline([('sm', sm), ('knn_best', knn_best)])
+# est_cart = Pipeline([('sm', sm), ('cart_best', cart_best)])
+# g = plot_learning_curve(gs_knn.best_estimator_,"kNN learning curves", x_scale, y,cv=kfold)
+# g = plot_learning_curve(est_knn,"kNN learning curves", x_scale, y,cv=kfold)
+# g = plot_learning_curve(est_cart,"Cart learning curves1", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_knn.best_estimator_,"kNN learning curves", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_cart.best_estimator_,"CART learning curves", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_rf.best_estimator_,"Random Forest learning curves", x_scale, y,cv=kfold)
 
 """ Feature Importance
 """
-nrows = ncols = 2
+nrows = ncols = 0
 fig, axes = plt.subplots(nrows = nrows, ncols = ncols, sharex="all", figsize=(15,15))
 
-names_classifiers = [("KNN", knn_best),("CART",cart_best),("Random Forest",rf_best)]
+names_classifiers = [("CART",cart_best),("Random Forest",rf_best)]
 
 nclassifier = 0
-for row in range(nrows):
-    for col in range(ncols):
-        name = names_classifiers[nclassifier][0]
-        classifier = names_classifiers[nclassifier][1]
-        indices = np.argsort(classifier.feature_importances_)[::-1][:40]
-        g = sns.barplot(y=X_train.columns[indices][:40],x = classifier.feature_importances_[indices][:40] , orient='h',ax=axes[row][col])
+for i in names_classifiers:
+        name = i[0]
+        classifier = i[1]
+        indices = np.argsort(classifier.feature_importances_)[::-1]
+        g = sns.barplot(y=x.columns[indices], x = classifier.feature_importances_[indices], orient='h')
         g.set_xlabel("Relative importance",fontsize=12)
         g.set_ylabel("Features",fontsize=12)
         g.tick_params(labelsize=9)
         g.set_title(name + " feature importance")
-        nclassifier += 1
+        plt.savefig(name + ' feature importance.png')
