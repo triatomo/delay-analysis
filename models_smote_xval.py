@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -44,17 +44,18 @@ Fix imbalanced class problem by oversampling the data using SMOTE
 # Oversampling under represented classes with SMOTE
 print('Oversampling under-represented data...')
 sm = SMOTE('not majority', random_state=42)
-sm_x, sm_y = sm.fit_sample(x_scale, y)
+# sm_x, sm_y = sm.fit_sample(x_scale, y)
 
-df_y_train = pd.DataFrame(data = sm_y, columns= ['Delayed'])
-print('Length of oversampled data is', len(sm_x))     #62364 
-print('Number of delayed shipments in oversampled data is', len(sm_y[df_y_train['Delayed']==True]))  #31182
-print('Number of on time shipments is', len(sm_y[df_y_train['Delayed']==False]))  #31182
+# df_y_train = pd.DataFrame(data = sm_y, columns= ['Delayed'])
+# print('Length of oversampled data is', len(sm_x))     #62364 
+# print('Number of delayed shipments in oversampled data is', len(sm_y[df_y_train['Delayed']==True]))  #31182
+# print('Number of on time shipments is', len(sm_y[df_y_train['Delayed']==False]))  #31182
 
 """
 Building prediction models
 """
 random_state = 1        # Fixate a random state so that the results are reproducible
+n_jobs = -1
 
 logreg = LogisticRegression(random_state=random_state)
 rf = RandomForestClassifier(random_state=random_state)
@@ -77,7 +78,7 @@ kfold = StratifiedKFold(n_splits=5)
 cross_val_results_sm = []      # Returns n-fold results of cross validation of each predictor
 for classifier in clf:
     smoted_classifier = make_pipeline(sm, classifier)
-    cv_score = cross_val_score(smoted_classifier, x_scale, y, scoring='accuracy', cv=kfold)
+    cv_score = cross_val_score(smoted_classifier, x_scale, y, scoring='accuracy', cv=kfold, n_jobs=-1)
     cross_val_results_sm.append(cv_score)
 
 cv_means_sm = []    # Returns the means of the n-fold cross val results
@@ -102,7 +103,7 @@ plt.savefig('Accuracy scores_kfold_sm.png')
 plt.show()
 
 """
-Hyperparameter tuning for kNN, Random forest and CART (SMOTE)
+Hyperparameter tuning for kNN, MLP, Random forest and CART (SMOTE)
 """
 random_state = 1
 kfold = StratifiedKFold(n_splits=5)
@@ -206,16 +207,36 @@ g = plot_learning_curve(gs_rf.best_estimator_,"Random Forest learning curves", x
 nrows = ncols = 0
 fig, axes = plt.subplots(nrows = nrows, ncols = ncols, sharex="all", figsize=(15,15))
 
-names_classifiers = [("CART",cart_best),("Random Forest",rf_best)]
+names_classifiers = [("CART",cart_best), ("Random Forest",rf_best)]
 
 nclassifier = 0
 for i in names_classifiers:
         name = i[0]
         classifier = i[1]
-        indices = np.argsort(classifier.feature_importances_)[::-1]
+        indices = np.argsort(classifier.feature_importances_)[::-1][:25] 
         g = sns.barplot(y=x.columns[indices], x = classifier.feature_importances_[indices], orient='h')
+        for s in g.patches:
+            width = s.get_width()       # Put labels left of the end of the bar
+            g.text(width, s.get_y() + s.get_height()/2, round(s.get_width(),3), color='black', va="center")
+        # nested for loop doesnt work properly. RF has two label on each bar
         g.set_xlabel("Relative importance",fontsize=12)
         g.set_ylabel("Features",fontsize=12)
         g.tick_params(labelsize=9)
         g.set_title(name + " feature importance")
         plt.savefig(name + ' feature importance.png')
+
+# nclassifier = 0
+# for i in names_classifiers:
+#         name = i[0]
+#         classifier = i[1]
+#         indices = np.argsort(classifier.feature_importances_)[::-1][:25] 
+#         g = sns.barplot(y=x.columns[indices], x = classifier.feature_importances_[indices], orient='h')
+#         g.set_xlabel("Relative importance",fontsize=12)
+#         g.set_ylabel("Features",fontsize=12)
+#         g.tick_params(labelsize=9)
+#         g.set_title(name + " feature importance")
+#         plt.savefig(name + ' feature importance.png')
+
+        for i in g.patches:         # Put labels on bars
+    width = i.get_width()-(i.get_width()*0.12)        # Put labels left of the end of the bar
+    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")

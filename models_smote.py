@@ -23,7 +23,7 @@ pd.set_option('display.max_columns', None)
 Split data into training and test dataset
 """
 # Define columns relevant for the prediction
-model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'FHS-Delivery', 'Delayed']
+model_vars = ['Customer Address Country', 'Carrier', 'PPU day', 'FHS day', 'FDA day', 'Delivery day', 'PPU-FHS', 'FHS-FDA', 'FDA-Delivery', 'Delayed']
 
 rel_data = df[model_vars]
 rel_data_encoded = pd.get_dummies(rel_data)     # convert categorical vars into numerical.Yields 56 cols
@@ -59,13 +59,14 @@ x_test = scaler.transform(x_test)
 Building prediction models
 """
 random_state = 1        # Fixate a random state so that the results are reproducible
+n_jobs= -1
 
-logreg = LogisticRegression(random_state=random_state)
-rf = RandomForestClassifier(random_state=random_state)
-mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100)
-cart = DecisionTreeClassifier(random_state=random_state)
-knn = KNeighborsClassifier()
-svm = SVC(random_state=random_state)
+logreg = LogisticRegression(random_state=random_state, n_jobs=n_jobs)
+rf = RandomForestClassifier(random_state=random_state, n_jobs=n_jobs)
+mlp = MLPClassifier(hidden_layer_sizes= (50,50,50), max_iter=100, n_jobs=n_jobs)
+cart = DecisionTreeClassifier(random_state=random_state, n_jobs=n_jobs)
+knn = KNeighborsClassifier(n_jobs=n_jobs)
+svm = SVC(random_state=random_state, n_jobs=n_jobs)
 
 clf = []        # List of algorithms
 clf.append(logreg)
@@ -129,30 +130,3 @@ for p in matrix:
     plt.clf()
     n += 1
 
-"""Show the predictive power of the models by cross validating using stratified k fold
-"""
-kfold = StratifiedKFold(n_splits=5)
-cross_val_results_sm = []      # Returns n-fold results of cross validation of each predictor
-for classifier in clf:
-    cross_val_results_sm.append(cross_val_score(classifier, sm_x_train, sm_y_train, scoring='accuracy', cv=kfold))
-
-cv_means_sm = []    # Returns the means of the n-fold cross val results
-cv_std_sm = []      # Returns the standard deviation of the n-fold cross val results
-for cv in cross_val_results_sm:
-    cv_means_sm.append(cv.mean())
-    cv_std_sm.append(cv.std())   
-
-cv_res_sm = pd.DataFrame({"Cross Val Means":cv_means_sm, "Cross Val Errors":cv_std_sm, "Algorithm":["Logistic Regression", "Random Forest", "MLP", "CART", "KNN", "SVM"]})
-
-order = cv_res_sm.sort_values('Cross Val Means')      # Order bars in ascending order
-g = sns.barplot("Cross Val Means","Algorithm",data = cv_res_sm, order=order['Algorithm'], palette="Set3",orient = "h", **{'xerr':cv_std_sm})
-
-for i in g.patches:         # Put labels on bars
-    width = i.get_width()-(i.get_width()*0.12)        # Put labels left of the end of the bar
-    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
-    
-g.set_xlabel("Mean Accuracy")
-g = g.set_title("Cross Validation Score by SMOTE")
-plt.tight_layout()  
-plt.savefig('Accuracy scores_kfold_sm.png')
-plt.show()
