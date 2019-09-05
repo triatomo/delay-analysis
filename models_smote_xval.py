@@ -223,7 +223,7 @@ for i in names_classifiers:
         g.set_ylabel("Features",fontsize=12)
         g.tick_params(labelsize=9)
         g.set_title(name + " feature importance")
-        plt.savefig(name + ' feature importance.png')
+        plt.savefig(name + ' feature importance.png', bbox_inches='tight')
 
 # Feature importance for kNN
 
