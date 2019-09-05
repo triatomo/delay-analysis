@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LassoCV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier      # NeighborhoodComponentsAnalysis cannot import
 from sklearn.svm import SVC
@@ -225,18 +225,26 @@ for i in names_classifiers:
         g.set_title(name + " feature importance")
         plt.savefig(name + ' feature importance.png')
 
-# nclassifier = 0
-# for i in names_classifiers:
-#         name = i[0]
-#         classifier = i[1]
-#         indices = np.argsort(classifier.feature_importances_)[::-1][:25] 
-#         g = sns.barplot(y=x.columns[indices], x = classifier.feature_importances_[indices], orient='h')
-#         g.set_xlabel("Relative importance",fontsize=12)
-#         g.set_ylabel("Features",fontsize=12)
-#         g.tick_params(labelsize=9)
-#         g.set_title(name + " feature importance")
-#         plt.savefig(name + ' feature importance.png')
+# Feature importance for kNN
 
-        for i in g.patches:         # Put labels on bars
-    width = i.get_width()-(i.get_width()*0.12)        # Put labels left of the end of the bar
-    g.text(width, i.get_y() + i.get_height()/2, round(i.get_width(),3), color='black', va="center")
+random_state = 1
+kfold = StratifiedKFold(n_splits=5)
+
+col = x.columns
+df_x_scale = pd.DataFrame(x_scale, columns = col)       # Should use x_scale. x yields the wrong importance
+
+reg = LassoCV(cv=kfold, random_state=random_state, n_jobs=-1)
+reg.fit(df_x_scale, y)
+print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
+print("Best score using built-in LassoCV: %f" %reg.score(df_x_scale,y))
+coef = pd.Series(reg.coef_, index = x.columns)
+
+print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the other " +  str(sum(coef == 0)) + " variables")
+
+nonzero_coef = coef[coef != 0] 
+imp_coef = nonzero_coef.sort_values()
+# plt.rcParams['figure.figsize'] = (15, 15.0)
+imp_coef.plot(kind = "barh")
+plt.title("Feature importance using Lasso Model")
+plt.savefig('Feature importance Lasso_knn.png', bbox_inches='tight')
+plt.show()
