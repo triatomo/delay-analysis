@@ -193,11 +193,6 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     plt.savefig(title + '.png')
     return plt
 
-# est_knn = Pipeline([('sm', sm), ('knn_best', knn_best)])
-# est_cart = Pipeline([('sm', sm), ('cart_best', cart_best)])
-# g = plot_learning_curve(gs_knn.best_estimator_,"kNN learning curves", x_scale, y,cv=kfold)
-# g = plot_learning_curve(est_knn,"kNN learning curves", x_scale, y,cv=kfold)
-# g = plot_learning_curve(est_cart,"Cart learning curves1", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_knn.best_estimator_,"kNN learning curves", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_cart.best_estimator_,"CART learning curves", x_scale, y,cv=kfold)
 g = plot_learning_curve(gs_rf.best_estimator_,"Random Forest learning curves", x_scale, y,cv=kfold)
@@ -243,8 +238,18 @@ print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the oth
 
 nonzero_coef = coef[coef != 0] 
 imp_coef = nonzero_coef.sort_values()
-# plt.rcParams['figure.figsize'] = (15, 15.0)
-imp_coef.plot(kind = "barh")
+plt.rcParams['figure.figsize'] = (15, 15.0)
+g = imp_coef.plot(kind = "barh")
+for (s, i) in zip(g.patches, imp_coef):
+    width = s.get_width()       # Put labels left of the end of the bar
+    if i > 0:
+        g.text(width, s.get_y() + s.get_height()/2, round(s.get_width(),3), color='black', va="center")
+    else:
+        g.text(width-0.006, s.get_y() + s.get_height()/2, round(s.get_width(),3), color='black', va="center")
 plt.title("Feature importance using Lasso Model")
+g.set_xlabel("Relative importance",fontsize=12)
+g.set_ylabel("Features",fontsize=12)
+g.tick_params(labelsize=9)
+plt.tight_layout()  
 plt.savefig('Feature importance Lasso_knn.png', bbox_inches='tight')
 plt.show()
